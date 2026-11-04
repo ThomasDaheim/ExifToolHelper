@@ -29,6 +29,9 @@ import java.util.List;
 
 /**
  * Output of one ExifTool command, split into lines - without the {ready} markers.
+ *
+ * @param stdout lines ExifTool wrote to stdout
+ * @param stderr lines ExifTool wrote to stderr (errors and warnings)
  */
 public record ExecResult(List<String> stdout, List<String> stderr) {
     public ExecResult {

@@ -50,9 +50,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * One long running ExifTool process ("-stay_open True -@ -") that executes commands one after the other.
  *
- * Protocol: the arguments of a command are written to stdin one per line, followed by "-execute<n>".
- * ExifTool ends its stdout output with "{ready<n>}". "-echo4 {ready<n>}" prints the same marker to stderr after
- * the command, so both streams can be read up to the end of the command.
+ * Protocol: the arguments of a command are written to stdin one per line, followed by {@code -execute<n>}.
+ * ExifTool ends its stdout output with {@code {ready<n>}}. {@code -echo4 {ready<n>}} prints the same marker to
+ * stderr after the command, so both streams can be read up to the end of the command.
  *
  * If the process crashed or doesn't answer within the timeout, it is restarted and the command is retried once.
  */
@@ -101,6 +101,10 @@ public class ExifTool implements AutoCloseable {
     /**
      * Reads the given tags of all files with "-json -n -G1": numbers are numeric, keys are "Group1:Tag".
      * Files ExifTool can't read are missing in the result or only carry an error entry.
+     *
+     * @param files files to read - an empty list gives an empty result without calling ExifTool
+     * @param tags tag names without leading "-", e.g. "Composite:GPSLatitude"
+     * @return one map per file: "SourceFile" plus the found tags
      */
     public List<Map<String, Object>> readJson(List<Path> files, List<String> tags) {
         if (files.isEmpty()) {
@@ -122,7 +126,11 @@ public class ExifTool implements AutoCloseable {
 
     /**
      * Writes a binary tag (e.g. PreviewImage, JpgFromRaw, ThumbnailImage) to target.
-     * Returns false if the file doesn't contain the tag.
+     *
+     * @param file file to extract from
+     * @param tag tag name without leading "-"
+     * @param target file to write - an existing one is replaced
+     * @return false if the file doesn't contain the tag
      */
     public boolean extractBinary(Path file, String tag, Path target) {
         try {
