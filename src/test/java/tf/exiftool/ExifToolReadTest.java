@@ -101,4 +101,23 @@ class ExifToolReadTest {
         final Path file = jpeg(dir.resolve("plain.jpg"));
         assertFalse(exifTool.extractBinary(file, "PreviewImage", dir.resolve("none.jpg")));
     }
+
+    @Test
+    void readsAllTagsHumanReadable() throws IOException {
+        final Path file = jpeg(dir.resolve("info.jpg"));
+        exifTool.execute(List.of("-overwrite_original", "-XMP-photoshop:City=Völs", "-GPS:GPSLatitude#=46.5",
+                "-GPS:GPSLatitudeRef#=N", file.toString()));
+
+        final Map<String, String> tags = exifTool.readAllTags(file);
+
+        assertEquals("Völs", tags.get("XMP-photoshop:City"));
+        assertEquals("info.jpg", tags.get("System:FileName"));
+        assertEquals("46 deg 30' 0.00\" N", tags.get("Composite:GPSLatitude"));
+        assertFalse(tags.containsKey("SourceFile"));
+    }
+
+    @Test
+    void allTagsOfMissingFileAreEmpty() {
+        assertTrue(exifTool.readAllTags(dir.resolve("missing.jpg")).isEmpty());
+    }
 }

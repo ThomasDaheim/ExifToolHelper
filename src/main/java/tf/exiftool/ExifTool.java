@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -122,6 +123,35 @@ public class ExifTool implements AutoCloseable {
         } catch (JsonProcessingException ex) {
             throw new ExifToolException("Can't parse ExifTool output", ex);
         }
+    }
+
+    /**
+     * All tags of one file with their human readable values, e.g. for an "image info" view.
+     *
+     * @param file file to read
+     * @return "Group1:Tag" to value as text, in the order ExifTool reports them - empty if ExifTool can't read the file
+     */
+    public Map<String, String> readAllTags(Path file) {
+        // -a: duplicate tags as well, -G1: group names like "ExifIFD" or "XMP-photoshop"
+        final String json = execute(List.of("-json", "-a", "-G1", file.toAbsolutePath().toString())).stdoutText().trim();
+        if (json.isEmpty()) {
+            return Map.of();
+        }
+        final List<Map<String, Object>> entries;
+        try {
+            entries = MAPPER.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+        } catch (JsonProcessingException ex) {
+            throw new ExifToolException("Can't parse ExifTool output", ex);
+        }
+        final Map<String, String> tags = new LinkedHashMap<>();
+        if (!entries.isEmpty()) {
+            entries.get(0).forEach((key, value) -> {
+                if (!"SourceFile".equals(key)) {
+                    tags.put(key, String.valueOf(value));
+                }
+            });
+        }
+        return tags;
     }
 
     /**
