@@ -81,6 +81,19 @@ class ExifToolReadTest {
     }
 
     @Test
+    void optionsAreHandedToExifTool() throws IOException {
+        final Path file = jpeg(dir.resolve("options.jpg"));
+        exifTool.execute(List.of("-overwrite_original", "-XMP-photoshop:City=Meran", "-XMP-photoshop:State=Südtirol", file.toString()));
+
+        // e.g. "-fast2" to skip maker notes - here "-x" makes the effect visible
+        final Map<String, Object> entry = exifTool.readJson(List.of(file),
+                List.of("XMP-photoshop:City", "XMP-photoshop:State"), List.of("-fast2", "-x", "XMP-photoshop:State")).get(0);
+
+        assertEquals("Meran", entry.get("XMP-photoshop:City"));
+        assertFalse(entry.containsKey("XMP-photoshop:State"));
+    }
+
+    @Test
     void emptyFileListGivesEmptyResult() {
         assertTrue(exifTool.readJson(List.of(), List.of("XMP-photoshop:City")).isEmpty());
     }

@@ -108,10 +108,25 @@ public class ExifTool implements AutoCloseable {
      * @return one map per file: "SourceFile" plus the found tags
      */
     public List<Map<String, Object>> readJson(List<Path> files, List<String> tags) {
+        return readJson(files, tags, List.of());
+    }
+
+    /**
+     * Same as {@link #readJson(List, List)} with additional ExifTool options.
+     * "-fast2" e.g. skips maker notes and trailers - for photos from a DSLR or smartphone several times faster if the
+     * wanted tags aren't stored there.
+     *
+     * @param files files to read - an empty list gives an empty result without calling ExifTool
+     * @param tags tag names without leading "-", e.g. "Composite:GPSLatitude"
+     * @param options ExifTool options as they are passed on the command line, e.g. "-fast2"
+     * @return one map per file: "SourceFile" plus the found tags
+     */
+    public List<Map<String, Object>> readJson(List<Path> files, List<String> tags, List<String> options) {
         if (files.isEmpty()) {
             return List.of();
         }
         final List<String> args = new ArrayList<>(List.of("-json", "-n", "-G1"));
+        args.addAll(options);
         tags.forEach(tag -> args.add("-" + tag));
         files.forEach(file -> args.add(file.toAbsolutePath().toString()));
         final String json = execute(args).stdoutText().trim();
